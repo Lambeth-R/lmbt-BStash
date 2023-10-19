@@ -34,7 +34,7 @@ inline const std::wstring UTF8_Decode(const std::string &aStr)
 {
     const size_t& wstr_len = aStr.size() + 1;
     std::unique_ptr<wchar_t[]> twPtr(new wchar_t[wstr_len]);
-    if (MultiByteToWideChar(CP_UTF8, 0, aStr.data(), -1, twPtr.get(), wstr_len) < wstr_len)
+    if (MultiByteToWideChar(CP_UTF8, 0, aStr.data(), -1, twPtr.get(), static_cast<int>(wstr_len)) < wstr_len)
     {
         return {};
     }
@@ -45,7 +45,7 @@ inline const std::string UTF8_Encode(const std::wstring &wStr)
 {
     const size_t& astr_len = wStr.size() + 1;
     std::unique_ptr<char[]> taPtr(new char[astr_len]);
-    if (WideCharToMultiByte(CP_ACP, 0, wStr.data(), -1, taPtr.get(), astr_len, 0, 0) < astr_len)
+    if (WideCharToMultiByte(CP_ACP, 0, wStr.data(), -1, taPtr.get(), static_cast<int>(astr_len), 0, 0) < astr_len)
     {
         return {};
     };

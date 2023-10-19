@@ -1,8 +1,12 @@
-[submodule "CryptoLib"]
-	path = CryptoLib
-	url = D:/Docs/Visual Studio 2022/Projects/LmbtSpace/CryptoLib
-	branch = master
 [submodule "LogLib"]
 	path = LogLib
 	url = https://github.com/Lambeth-R/lmbt-LogLib/
 	branch = master
+[submodule "CryptoLib"]
+	path = CryptoLib
+	url = https://github.com/Lambeth-R/lmbt-CryptoLib/
+	branch = main
+[submodule "FsLib"]
+	path = FsLib
+	url = https://github.com/Lambeth-R/lmbt_FsLib
+	branch = main

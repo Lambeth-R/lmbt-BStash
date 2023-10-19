@@ -3,19 +3,18 @@
 #include <fstream>
 #include <thread>
 #include <Windows.h>
-#include "../Include/stdafx.h"
 
 inline std::wstring ForamtSystemMessage(const uint32_t _Message_id) noexcept
 {
     const auto curr_last_err = GetLastError();
-    DWORD _Lang_id;
-    const auto _Ret = GetLocaleInfoEx(LOCALE_NAME_SYSTEM_DEFAULT, LOCALE_ILANGUAGE | LOCALE_RETURN_NUMBER,
-        reinterpret_cast<LPWSTR>(&_Lang_id), sizeof(_Lang_id) / sizeof(wchar_t));
-    if (_Ret == 0) { _Lang_id = 0; }
+    DWORD lang_id;
+    const auto ret = GetLocaleInfoEx(LOCALE_NAME_SYSTEM_DEFAULT, LOCALE_ILANGUAGE | LOCALE_RETURN_NUMBER,
+        reinterpret_cast<LPWSTR>(&lang_id), sizeof(lang_id) / sizeof(wchar_t));
+    if (ret == 0) { lang_id = 0; }
     wchar_t* inner_allocated_buf = nullptr;
-    auto memory_guard = MakeScopeGuard([&]() { if (inner_allocated_buf) { LocalFree(inner_allocated_buf); } });
-    const auto ret_size =FormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-            nullptr, _Message_id, _Lang_id, (wchar_t*) & inner_allocated_buf, 0, nullptr);
+    std::shared_ptr<void> _{nullptr, [&](void* ptr) { if (inner_allocated_buf) { LocalFree(inner_allocated_buf); } }};
+    const auto ret_size = FormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+            nullptr, _Message_id, lang_id, (wchar_t*) & inner_allocated_buf, 0, nullptr);
     SetLastError(curr_last_err);
     return std::wstring(inner_allocated_buf, static_cast<const size_t>(ret_size) - 2);
 }
@@ -112,8 +111,6 @@ public:
     }
 };
 
-
-
 class LogClass
 {
     #pragma region Static
@@ -147,12 +144,12 @@ private:
     #pragma endregion
 };
 
-#if !_HAS_CXX17
+#if _HAS_CXX17
+std::wostream& operator<<(std::wostream& iStream, std::string_view iString);
+std::wostream& operator<<(std::wostream& iStream, std::wstring_view iString);
+#else
 std::wostream& operator<<(std::wostream& iStream, const char* data);
 std::wostream& operator<<(std::wostream& iStream, const char data);
 std::wostream& operator<<(std::wostream& iStream, const wchar_t* data);
 std::wostream& operator<<(std::wostream& iStream, const wchar_t data);
-#else
-std::wostream& operator<<(std::wostream& iStream, std::string_view iString);
-std::wostream& operator<<(std::wostream& iStream, std::wstring_view iString);
 #endif

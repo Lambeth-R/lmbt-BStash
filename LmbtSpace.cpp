@@ -1,5 +1,6 @@
 ﻿#define MODULE_NAME "LmbtSpace"
-#include "Include/stdafx.h"
+#include "Include/Common.h"
+#include "Include/LogClass.h"
 #include "Include/Cypher.h"
 #include "Include/UTF_Unocode.h"
 

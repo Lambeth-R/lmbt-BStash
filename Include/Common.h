@@ -1,6 +1,6 @@
 #pragma once
 #include <vcruntime.h>
-#if defined(_HAS_CXX17)
+#if _HAS_CXX17
     #define _CRT_SECURE_NO_WARNINGS
     #include <stdio.h>
     typedef int(__cdecl* sprintf_foo)(const void *, size_t, const void*, ...);
@@ -16,7 +16,7 @@
 #endif
 
 #pragma region string_format
-#if defined(_HAS_CXX17)
+#if _HAS_CXX17
     template<typename T, typename ... Args>
     const std::basic_string<T> string_format(const std::basic_string_view<T> format, Args&& ...args)
     {
@@ -93,4 +93,3 @@ void SafeDelete(T **ptr)
 }
 
 #define USE_LOGGER
-#include "LogClass.h"
