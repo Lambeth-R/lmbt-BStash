@@ -29,7 +29,7 @@ namespace fs
     };
 }
 
-const fs::path Fs_GetDosStylePath(const fs::path& path);
+const fs::path Fs_GetMountPointPath(const fs::path& path);
 
 const fs::path Fs_ExpandPath(const fs::path& path);
 
