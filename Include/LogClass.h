@@ -1,23 +1,18 @@
+//
+// Implementation of stream based logger.
+// All main types are present.
+// Works mainly with wchar_t data. Has option for extern Utf8 translation.
+//
+
 #pragma once
 #include <sstream>
 #include <fstream>
-#include <thread>
 #include <Windows.h>
 
-inline std::wstring ForamtSystemMessage(const uint32_t _Message_id) noexcept
-{
-    const auto curr_last_err = GetLastError();
-    DWORD lang_id;
-    const auto ret = GetLocaleInfoEx(LOCALE_NAME_SYSTEM_DEFAULT, LOCALE_ILANGUAGE | LOCALE_RETURN_NUMBER,
-        reinterpret_cast<LPWSTR>(&lang_id), sizeof(lang_id) / sizeof(wchar_t));
-    if (ret == 0) { lang_id = 0; }
-    wchar_t* inner_allocated_buf = nullptr;
-    std::shared_ptr<void> _{nullptr, [&](void* ptr) { if (inner_allocated_buf) { LocalFree(inner_allocated_buf); } }};
-    const auto ret_size = FormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-            nullptr, _Message_id, lang_id, (wchar_t*) & inner_allocated_buf, 0, nullptr);
-    SetLastError(curr_last_err);
-    return std::wstring(inner_allocated_buf, static_cast<const size_t>(ret_size) - 2);
-}
+#define FEATURE_STATIC_LINKING 0
+
+std::wstring ParseLastError();
+std::wstring ForamtSystemMessage(const uint32_t messageId) noexcept;
 
 #if _HAS_CXX17
     #define PARSE_ERROR(val) std::hex << val << " " << ForamtSystemMessage(val)
@@ -27,129 +22,109 @@ inline std::wstring ForamtSystemMessage(const uint32_t _Message_id) noexcept
 
 #ifdef USE_LOGGER
     #ifdef MODULE_NAME
-        #define LOG(lvl, stream) LogClass().Log(lvl) << "(" << MODULE_NAME<< ")\t" << stream
+        #define LOGSTREAM(lvl, stream)      LogClass().Log(lvl) << L"(" << MODULE_NAME<< L")\t" << stream
+        #define LOGPRINT(lvl, format, ...)  LogClass().LogPrint(lvl, MODULE_NAME, format, __VA_ARGS__)
     #else
-        #define LOG(lvl, stream) LogClass().Log(lvl) << stream
+        #define LOGSTREAM(lvl, stream)      LogClass().Log(lvl) << stream
+        #define LOGPRINT(lvl, format, ...)  LogClass().LogPrint(lvl, nullptr,format, __VA_ARGS__)
     #endif
 
 #else
-    #define LOG()
+    #define LOGSTREAM()
+    #define LOGPRINT()
 #endif // USE_LOGGER
 
-enum class eLogType
-{
-    None = 0,
-    Debug = 2,
-    Print = 4,
-    File = 8
-};
-DEFINE_ENUM_FLAG_OPERATORS(eLogType);
+#define Logstream_Error(str)       LOGSTREAM(LogClass::LogLevel_Error,   str)
+#define Logstream_Warning(str)     LOGSTREAM(LogClass::LogLevel_Warning, str)
+#define Logstream_Info(str)        LOGSTREAM(LogClass::LogLevel_Info,    str)
+#define Logstream_Debug(str)       LOGSTREAM(LogClass::LogLevel_Debug,   str)
 
-enum class eLogLevels
-{
-    None = 0,
-    Error = 1,
-    Warning = 2,
-    Info = 3,
-    Debug = 4,
-    All = 10
-};
+#define Log_Error(...)     LOGPRINT(LogClass::LogLevel_Error,    __VA_ARGS__)
+#define Log_Warning(...)   LOGPRINT(LogClass::LogLevel_Warning,  __VA_ARGS__)
+#define Log_Info(...)      LOGPRINT(LogClass::LogLevel_Info,     __VA_ARGS__)
+#define Log_Debug(...)     LOGPRINT(LogClass::LogLevel_Debug,    __VA_ARGS__)
 
-class ConsoleColour
+struct ConsoleColor
 {
-    enum class eConsoleColour
+    enum Color
     {
-        NC = -1,
-        Black,
-        Red,
-        Green,
-        Yellow,
-        Blue,
-        Magenta,
-        Cyan,
-        White,
+        Color_NC = -1,
+        Color_Black,
+        Color_Red,
+        Color_Green,
+        Color_Yellow,
+        Color_Blue,
+        Color_Magenta,
+        Color_Cyan,
+        Color_White,
     };
-public:
-    static constexpr eConsoleColour Lvl_to_Colour(eLogLevels lvl)
-    {
-        switch (lvl)
-        {
-        case eLogLevels::Error:
-        case eLogLevels::Warning:
-        case eLogLevels::Info:
-        case eLogLevels::Debug:
-            return eConsoleColour((uint16_t)lvl);
-            break;
-        case eLogLevels::None:
-        case eLogLevels::All:
-        default:
-            return eConsoleColour::NC;
-        }
-    }
-    static const std::wstring SetColours(const std::wstring& iStream, int16_t front, int16_t back = -1)
-    {
-        if (front == -1)
-        {
-            return iStream;
-        }
-        std::wstringstream ws;
-        static wchar_t fCode[20] = { 0 };
-        static wchar_t bCode[20] = { 0 };
-        static wchar_t cleanCode[] = L"\033[0m";
-        if (back > 0)
-        {
-            swprintf_s(fCode, L"\033[%d;%dm", (uint16_t)front + 30, (uint16_t)back + 40);
-        }
-        else
-        {
-            swprintf_s(fCode, L"\033[%dm", (uint16_t)front + 30);
-        }
-        ws << fCode;
-        ws << iStream;
-        ws << cleanCode;
-        return ws.str();
-    }
+    static constexpr  Color         Lvl_to_Color(uint8_t lvl);
+    static const      std::wstring  SetColors(const std::wstring& iStream, int16_t front, int16_t back = -1);
 };
 
 class LogClass
 {
-    #pragma region Static
-
-    static eLogLevels       s_eCurLogLvl;
-    static std::wofstream   s_OutputFile;
-    static eLogType         s_LogFlags;
-    static DWORD            s_Error;
-    static std::string      s_Filename;
-    static bool             s_ConsoleFixed;
-    static bool EraseFlag(DWORD flag);
-    static void SetConsoleUTF8();
 public:
-    static void InitConsole();
-    static void InitLogger(eLogLevels eLogLvl, const std::string& fName = "", eLogType eFlags = eLogType::Debug);
-    #pragma endregion
+    enum LogLevel
+    {
+        LogLevel_None       = 0,
+        LogLevel_Error      = 1,
+        LogLevel_Warning    = 2,
+        LogLevel_Info       = 3,
+        LogLevel_Debug      = 4,
+        LogLevel_All        = 10
+    };
 
-    #pragma region Public
-    LogClass() = default;
-    ~LogClass();
-    std::wstringstream& Log(eLogLevels elvl);
-    #pragma endregion
+    enum LogType
+    {
+        LogType_None      = 0,
+        LogType_Debug     = 2,
+        LogType_Print     = 4,
+        LogType_File      = 8,
+        LogType_Callback  = 16
+    };
 
-    #pragma region Private
+    struct CallbackEx
+    {
+        typedef void (*Log_Callback) (void* ex, const std::wstring& string);
+
+        Log_Callback                *callback   = nullptr;
+        void                        *callbackEx = nullptr;
+    };
 private:
-    
-    const std::wstring GenerateAppendix() const;
-    eLogLevels          m_elogLevel;
-    std::wstringstream  m_Data;
-    
-    #pragma endregion
-};
+
+    static LogLevel                 s_CurLogLvl;
+    static std::wofstream           s_OutputFile;
+    static LogType                  s_LogFlags;
+    static CallbackEx               s_Callback;
+
+           LogLevel                 m_LogLevel;
+           std::wstringstream       m_Data;
+
+    static void                     SetConsoleUTF8();
+public:
+
+    static void                     InitConsole();
+    static void                     InitLogger(LogLevel eLogLvl, LogType eFlags, const std::string& fName = "", const CallbackEx &callback = {});
+
+    static void                     DumpPtr(const std::string &dumpName, void *ptr, size_t dumpSize);
+
+                                    LogClass(void) = default;
+                                    ~LogClass();
+
+    std::wstringstream&             Log(LogLevel elvl);
+    std::wstringstream&             LogPrint(LogLevel elvl, const wchar_t *moduleName, const wchar_t *format, ...);
 
 #if _HAS_CXX17
-std::wostream& operator<<(std::wostream& iStream, std::string_view iString);
-std::wostream& operator<<(std::wostream& iStream, std::wstring_view iString);
-#else
-std::wostream& operator<<(std::wostream& iStream, const char* data);
-std::wostream& operator<<(std::wostream& iStream, const char data);
-std::wostream& operator<<(std::wostream& iStream, const wchar_t* data);
-std::wostream& operator<<(std::wostream& iStream, const wchar_t data);
+    friend std::wostream&           operator<<(std::wostream &iStream, std::string_view  iString);
+    friend std::wostream&           operator<<(std::wostream &iStream, std::wstring_view iString);
 #endif
+    friend std::wostream&           operator<<(std::wostream &iStream, const char *data);
+    friend std::wostream&           operator<<(std::wostream &iStream, const char data);
+    friend std::wostream&           operator<<(std::wostream &iStream, const wchar_t *data);
+    friend std::wostream&           operator<<(std::wostream &iStream, const wchar_t data);
+
+private:
+    const wchar_t*                  GenerateAppendix() const;
+};
+DEFINE_ENUM_FLAG_OPERATORS(LogClass::LogType);
