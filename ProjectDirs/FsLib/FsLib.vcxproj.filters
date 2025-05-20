@@ -6,7 +6,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\FsLib\FsLib.cpp" />
+    <ClCompile Include="..\..\Libs\FsLib\FsLib.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\Include\FsLib.h">

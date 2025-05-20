@@ -1,12 +1,12 @@
 [submodule "LogLib"]
-	path = LogLib
+	path = Libs/LogLib
 	url = https://github.com/Lambeth-R/lmbt-LogLib/
 	branch = master
 [submodule "CryptoLib"]
-	path = CryptoLib
+	path = Libs/CryptoLib
 	url = https://github.com/Lambeth-R/lmbt-CryptoLib/
 	branch = main
 [submodule "FsLib"]
-	path = FsLib
+	path = Libs/FsLib
 	url = https://github.com/Lambeth-R/lmbt_FsLib
 	branch = main

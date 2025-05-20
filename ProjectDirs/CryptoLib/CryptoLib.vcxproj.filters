@@ -12,6 +12,6 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\CryptoLib\Cypher.cpp" />
+    <ClCompile Include="..\..\Libs\CryptoLib\Cypher.cpp" />
   </ItemGroup>
 </Project>

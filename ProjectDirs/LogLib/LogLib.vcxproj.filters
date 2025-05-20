@@ -6,11 +6,12 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\Include\LogClass.h">
-      <Filter>Headers</Filter>
-    </ClInclude>
+    <ClCompile Include="..\..\Libs\LogLib\Format.cpp" />
+    <ClCompile Include="..\..\Libs\LogLib\LogLib.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\LogLib\LogClass.cpp" />
+    <ClInclude Include="..\..\Libs\LogLib\LogLib.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
